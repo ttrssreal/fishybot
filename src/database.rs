@@ -3,7 +3,7 @@ use std::env::var;
 
 use diesel::prelude::*;
 
-use crate::utils::{FishyError};
+use crate::utils::{FishyError, UserError};
 use diesel::{prelude::SqliteConnection};
 
 async fn get_conn() -> SqliteConnection {
@@ -16,7 +16,7 @@ pub async fn get_ign(_discord_tag: &str) -> Result<String, FishyError> {
     use crate::schema::links::dsl::*;
     match links.filter(discord_tag.eq(_discord_tag)).first::<Link>(&conn) {
         Ok(result) => { return Ok(result.ign.to_string()); },
-        Err(_) => { return Err(FishyError::IgnNotLinked(_discord_tag.to_string())); }
+        Err(_) => { return Err(FishyError::User(UserError::IgnNotLinked(_discord_tag.to_string()))); }
     };
 }
 

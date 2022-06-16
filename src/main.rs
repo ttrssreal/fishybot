@@ -43,7 +43,7 @@ async fn main() {
 
     let token = var("DISCORD_TOKEN").expect("discord token");
 
-    let intents = GatewayIntents::non_privileged() | GatewayIntents::MESSAGE_CONTENT;
+    let intents = GatewayIntents::non_privileged() | GatewayIntents::MESSAGE_CONTENT | GatewayIntents::GUILD_MESSAGES | GatewayIntents::GUILD_MEMBERS;
 
     let mut client = Client::builder(&token, intents).event_handler(Handler).framework(framework).await.expect("Err creating client");
 

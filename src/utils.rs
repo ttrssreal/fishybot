@@ -23,7 +23,8 @@ pub enum UserError {
     PlayerDosentExist(String),
     PlayerNoHypixel(String),
     PlayerNoLinkedDiscord(String),
-    Nofished()
+    Nofished(),
+    IgnNotLinked(String)
 }
 
 #[derive(Debug)]
@@ -32,7 +33,6 @@ pub enum FishyError {
     NetworkError(String),
     JsonDecodeError(String),
     DatabaseError(diesel::result::Error),
-    IgnNotLinked(String)
 }
 
 impl std::error::Error for FishyError {}
@@ -45,11 +45,11 @@ impl std::fmt::Display for FishyError {
                     UserError::PlayerDosentExist(player_name) => write!(f, "The player {player_name} dosen't exists."),
                     UserError::PlayerNoHypixel(player_name) => write!(f, "{player_name} hasn't logged into hypixel."),
                     UserError::PlayerNoLinkedDiscord(player_name) => write!(f, "I can't find a discord profile on hypixel, linked to {player_name}."),
-                    UserError::Nofished() => write!(f, "Hasn't fished before")
+                    UserError::Nofished() => write!(f, "Hasn't fished before"),
+                    UserError::IgnNotLinked(_) => write!(f, "You need to link your account first. f!l [username]."),
                 }
             },
             FishyError::DatabaseError(err) => write!(f, "Database Err: {err}"),
-            FishyError::IgnNotLinked(tag) => write!(f, "IgnNotLinked, Discord Tag: {tag}"),
             FishyError::NetworkError(url) => write!(f, "NetworkError URL: {url}"),
             FishyError::JsonDecodeError(location) => write!(f, "JsonDecodeError Loc: {location}"),
         }

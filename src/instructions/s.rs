@@ -22,7 +22,16 @@ pub async fn s(ctx: &Context, msg: &Message, mut _args: Args) -> CommandResult {
 
     let author_tag = &msg.author.tag();
     let target_ign = _args.single::<String>().unwrap_or("".to_string());
-    let ign = if _args.len() == 0 { database::get_ign( author_tag).await? } else {target_ign};
+    let ign = if _args.len() == 0 { match database::get_ign( author_tag).await {
+        Ok(ok) => ok,
+        Err(err) => {
+            match err {
+                utils::FishyError::User(_) => utils::send_message_txt(&msg.channel_id, ctx, &format!("{}", err)).await,
+                _ => { println!("{:?}", err); }
+            };
+            return Ok(());
+        }
+    } } else {target_ign};
     let is_special: bool = var("SPECIAL").expect("no special list").split(" ").collect::<Vec<&str>>().iter().any(|x| x.to_string() == ign);
     let fish_stats = match utils::get_fishing(&ign).await {
         Ok(fish_stats) => fish_stats,
