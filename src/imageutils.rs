@@ -19,8 +19,10 @@ pub async fn fill_template(ign: &str, special: bool, fish: f64, junk: f64, treas
     let fish_to_level_up = if fish < 10000f64 {10000} else {if fish < 25000f64 {25000} else {if fish < 50000f64 {50000} else {3}}};
     let next_level = if master_level >= 3 {3} else {master_level + 1};
 
+    let formated_ign = &format!("{}[{}]", ign, master_level);
+
     let max_len = 791 as f32;
-    let len = { let length = (max_len/(fish_to_level_up as f32)*fish as f32) as i32; if length <= 0 {1} else {length} };
+    let len = { let length = (max_len/(fish_to_level_up as f32)*fish as f32) as i32; if length <= 0 {1} else  { if length > (max_len as i32) {max_len as i32} else {length} } };
 
     let title_size = 180f32;
     let fish_stats_text_size = 150f32;
@@ -34,10 +36,11 @@ pub async fn fill_template(ign: &str, special: bool, fish: f64, junk: f64, treas
     drawing::draw_text_mut(
         &mut dyn_image, 
         if special {SPECIAL_COLOUR} else {NORMAL_COLOUR}, 
-        WIDTH/2-get_text_width(ign, &font, title_size) as i32, 14, 
+        ((WIDTH/2) as i32)-(get_text_width(formated_ign, &font, title_size)/2) as i32, 14, 
         rusttype::Scale::uniform(title_size),
         &font,
-        &format!("{}[{}]", ign, master_level)
+        formated_ign
+        
     );
 
     drawing::draw_text_mut(&mut dyn_image, BLACK, 170, 450, rusttype::Scale::uniform(fish_stats_text_size), &font, &fish.to_string());
@@ -47,7 +50,7 @@ pub async fn fill_template(ign: &str, special: bool, fish: f64, junk: f64, treas
     drawing::draw_text_mut(&mut dyn_image, BLACK, 494+5,888-4, rusttype::Scale::uniform(chance_stats_text_size), &font, 
     &format!("{:.1}%", treasure/(treasure+fish)*100f64)
     );
-    drawing::draw_text_mut(&mut dyn_image, BLACK, 1264+25+10,888-4, rusttype::Scale::uniform(chance_stats_text_size), &font, 
+    drawing::draw_text_mut(&mut dyn_image, BLACK, 1264+25+5,888-4, rusttype::Scale::uniform(chance_stats_text_size), &font, 
     &format!("{:.1}%", junk/(junk+fish)*100f64)
     );
     
@@ -60,7 +63,7 @@ pub async fn fill_template(ign: &str, special: bool, fish: f64, junk: f64, treas
     );
 
     drawing::draw_hollow_circle_mut(&mut dyn_image, (524+30,923-5), 45+30, BLACK);
-    drawing::draw_hollow_circle_mut(&mut dyn_image, (1324+30,923-5), 45+30, BLACK);
+    drawing::draw_hollow_circle_mut(&mut dyn_image, (1324+25,923-5), 45+30, BLACK);
 
     drawing::draw_filled_circle_mut(&mut dyn_image, (373,1304+28), 27, NORMAL_COLOUR);
     drawing::draw_filled_circle_mut(&mut dyn_image, (376+len,1304+28), 27, NORMAL_COLOUR);
