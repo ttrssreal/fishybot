@@ -24,7 +24,7 @@ pub enum UserError {
     PlayerNoHypixel(String),
     PlayerNoLinkedDiscord(String),
     Nofished(),
-    IgnNotLinked(String)
+    UUIDNotLinked(String)
 }
 
 #[derive(Debug)]
@@ -42,11 +42,11 @@ impl std::fmt::Display for FishyError {
         match self {
             FishyError::User(user_error) => {
                 match user_error {
-                    UserError::PlayerDosentExist(player_name) => write!(f, "The player {player_name} dosen't exists."),
-                    UserError::PlayerNoHypixel(player_name) => write!(f, "{player_name} hasn't logged into hypixel."),
-                    UserError::PlayerNoLinkedDiscord(player_name) => write!(f, "I can't find a discord profile on hypixel, linked to {player_name}."),
+                    UserError::PlayerDosentExist(_player_name) => write!(f, "That player doesn't exist."),
+                    UserError::PlayerNoHypixel(_player_name) => write!(f, "They haven't logged into hypixel."),
+                    UserError::PlayerNoLinkedDiscord(ign) => write!(f, "I can't find a discord profile on hypixel, linked to {ign}."),
                     UserError::Nofished() => write!(f, "Hasn't fished before"),
-                    UserError::IgnNotLinked(_) => write!(f, "You need to link your account first. f!l [username]."),
+                    UserError::UUIDNotLinked(_) => write!(f, "You need to link your account first. f!l [username]."),
                 }
             },
             FishyError::DatabaseError(err) => write!(f, "Database Err: {err}"),
@@ -58,13 +58,13 @@ impl std::fmt::Display for FishyError {
 
 #[derive(Serialize, Deserialize)]
 pub struct MojangProfile {
-    name: String,
-    id: String
+    id: String,
+    name: String
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct HypixelProfile {
-    success: bool,
+    pub success: bool,
     player: serde_json::Value
 }
 
@@ -83,42 +83,40 @@ pub async fn send_message_txt(channel_id: &ChannelId, ctx: &Context, message: &s
     };
 }
 
-pub async fn get_uuid(player_name: &str) -> Result<String, FishyError> {
-    let mojang_url_loc = var("MOJANG_PROFILE_API_ENDPOINT").expect("mojang enpoint");
-    let url = format!("{}/{}", mojang_url_loc, player_name);
+pub async fn get_ign(uuid: &str) -> Result<String, FishyError> {
+    let mojang_url_loc = var("MOJANG_PROFILE_API_ENDPOINT_IGN").expect("mojang enpoint");
+    let url = format!("{}/{}", mojang_url_loc, uuid);
     let mojang_resp = unwrap_or_return_r!(reqwest::Client::new().get(&url).send().await, Err(FishyError::NetworkError(url)));
 
     match mojang_resp.status() {
         reqwest::StatusCode::NO_CONTENT | reqwest::StatusCode::BAD_REQUEST => { 
-            return Err(FishyError::User(UserError::PlayerDosentExist(player_name.to_string())));
+            return Err(FishyError::NetworkError(url));
         }, _ => {}
     };
 
-    let mojang_pf = unwrap_or_return_r!(mojang_resp.json::<MojangProfile>().await, Err(FishyError::JsonDecodeError("Mojang".to_string())));
+    let mojang_pf = unwrap_or_return_r!(mojang_resp.json::<MojangProfile>().await, Err(FishyError::JsonDecodeError(url)));
 
-    Ok(mojang_pf.id)
+    Ok(mojang_pf.name)
 }
 
-async fn get_hypixel(player_name: &str) -> Result<HypixelProfile, FishyError> {
+pub async fn get_hypixel(uuid: &str) -> Result<HypixelProfile, FishyError> {
     let hypixel_url_loc = var("HYPIXEL_PROFILE_API_ENDPOINT").expect("hypixel enpoint");
     let hypixel_apik = var("HYPIXEL_API_KEY").expect("hypixel api key");
-    
-    let uuid: String = get_uuid(player_name).await?;
 
     let url = format!("{}?key={}&uuid={}", hypixel_url_loc, hypixel_apik, uuid);
 
     let hypixel_resp = unwrap_or_return_r!(reqwest::Client::new().get(&url).send().await, Err(FishyError::NetworkError(url)));
-    let hypixel_pf = unwrap_or_return_r!(hypixel_resp.json::<HypixelProfile>().await, Err(FishyError::JsonDecodeError("Hypixel".to_string())));
+    let hypixel_pf = unwrap_or_return_r!(hypixel_resp.json::<HypixelProfile>().await, Err(FishyError::JsonDecodeError(url)));
 
     if !(hypixel_pf.success) || hypixel_pf.player == serde_json::Value::Null {
-        return Err(FishyError::User(UserError::PlayerNoHypixel(player_name.to_string())));
+        return Err(FishyError::User(UserError::PlayerNoHypixel(uuid.to_string())));
     }
 
     Ok(hypixel_pf)
 }
 
-pub async fn get_fishing(player_name: &str) -> Result<Vec<u64>, FishyError> {
-    let hypixel_pf = get_hypixel(player_name).await?;
+pub async fn get_fishing(uuid: &str) -> Result<Vec<u64>, FishyError> {
+    let hypixel_pf = get_hypixel(uuid).await?;
 
     if let Some(achievements) = hypixel_pf.player.get("achievements") {
         if let Some(general_master_lure) = achievements.get("general_master_lure") {
@@ -130,12 +128,11 @@ pub async fn get_fishing(player_name: &str) -> Result<Vec<u64>, FishyError> {
                            general_trashiest_diver.as_u64().unwrap()]);
         }}}
     }
-    
     Err(FishyError::User(UserError::Nofished()))
 }
 
-pub async fn get_discord(player_name: &str) -> Result<String, FishyError> {
-    let hypixel_pf = get_hypixel(player_name).await?;
+pub async fn get_discord(uuid: &str) -> Result<String, FishyError> {
+    let hypixel_pf = get_hypixel(uuid).await?;
 
     if let Some(social_media) = hypixel_pf.player.get("socialMedia") {
         if let Some(links) = social_media.get("links") {
@@ -145,5 +142,23 @@ pub async fn get_discord(player_name: &str) -> Result<String, FishyError> {
         }
     }
 
-    Err(FishyError::User(UserError::PlayerNoLinkedDiscord(player_name.to_string())))
+    let ign = get_ign(uuid).await?;
+
+    Err(FishyError::User(UserError::PlayerNoLinkedDiscord(ign)))
+}
+
+pub async fn get_uuid(ign: &str) -> Result<String, FishyError> {
+    let mojang_url_loc = var("MOJANG_PROFILE_API_ENDPOINT_UUID").expect("mojang enpoint");
+    let url = format!("{}/{}", mojang_url_loc, ign);
+    let mojang_resp = unwrap_or_return_r!(reqwest::Client::new().get(&url).send().await, Err(FishyError::NetworkError(url)));
+
+    match mojang_resp.status() {
+        reqwest::StatusCode::NO_CONTENT | reqwest::StatusCode::BAD_REQUEST => { 
+            return Err(FishyError::User(UserError::PlayerDosentExist(ign.to_string())));
+        }, _ => {}
+    };
+
+    let mojang_pf = unwrap_or_return_r!(mojang_resp.json::<MojangProfile>().await, Err(FishyError::JsonDecodeError(url)));
+
+    Ok(mojang_pf.id)
 }

@@ -4,12 +4,12 @@ use crate::schema::links;
 #[table_name = "links"]
 pub struct MakeLink<'a> {
     pub discord_tag: &'a str,
-    pub ign: &'a str
+    pub uuid: &'a str
 }
 
 #[derive(Queryable, AsChangeset, Debug)]
 pub struct Link {
     pub id: i32,
     pub discord_tag: String,
-    pub ign: String
+    pub uuid: String
 }
