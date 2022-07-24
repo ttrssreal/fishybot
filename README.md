@@ -6,7 +6,8 @@ Compile with ```cargo build --release```\
 Ensure the following enviroment variables are set:
 ```
 DISCORD_TOKEN=...
-MOJANG_PROFILE_API_ENDPOINT="https://api.mojang.com/users/profiles/minecraft"
+MOJANG_PROFILE_API_ENDPOINT_IGN="https://api.mojang.com/user/profile"
+MOJANG_PROFILE_API_ENDPOINT_UUID="https://api.mojang.com/users/profiles/minecraft"
 HYPIXEL_PROFILE_API_ENDPOINT="https://api.hypixel.net/player"
 HYPIXEL_API_KEY=...
 DATABASE_DIR=$PWD/database
