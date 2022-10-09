@@ -15,9 +15,25 @@ pub async fn fill_template(ign: &str, special: bool, fish: f64, junk: f64, treas
     static WIDTH:i32 = 1542;
 
     let location = var("TEMPLATE_DIR").expect("no template location");
-    let master_level = if fish < 10000f64 {0} else {if fish < 25000f64 {1} else {if fish < 50000f64 {2} else {3}}};
-    let fish_to_level_up = if fish < 10000f64 {10000} else {if fish < 25000f64 {25000} else {if fish < 50000f64 {50000} else {50000}}};
-    let next_level = if master_level >= 3 {3} else {master_level + 1};
+    let master_level =  if fish < 10_000f64 {0}
+                                else {
+                                    if fish < 25_000f64 {1}
+                                else {
+                                    if fish < 50_000f64 {2}
+                                else {
+                                    if fish < 100_000f64 {3}
+                                else {4}
+                            }}};
+    let fish_to_level_up =  if fish < 10_000f64 {10000} 
+                                    else {
+                                        if fish < 25_000f64 {25000} 
+                                    else {
+                                        if fish < 50_000f64 {50_000} 
+                                    else {
+                                        if fish < 100_000f64 {100_000}
+                                    else {100_000}
+                                }}};
+    let next_level = if master_level >= 4 {4} else {master_level + 1};
 
     let formated_ign = &format!("{}[{}]", ign, master_level);
 
