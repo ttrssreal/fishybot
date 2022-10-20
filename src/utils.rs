@@ -44,7 +44,7 @@ impl std::fmt::Display for FishyError {
                 match user_error {
                     UserError::PlayerDosentExist(_player_name) => write!(f, "That player doesn't exist."),
                     UserError::PlayerNoHypixel(_player_name) => write!(f, "They haven't logged into hypixel."),
-                    UserError::PlayerNoLinkedDiscord(ign) => write!(f, "I can't find a discord profile on hypixel, linked to {ign}."),
+                    UserError::PlayerNoLinkedDiscord(ign) => write!(f, "I can't find a discord profile on hypixel linked to {ign}."),
                     UserError::Nofished() => write!(f, "Hasn't fished before"),
                     UserError::UUIDNotLinked(_) => write!(f, "You need to link your account first. f!l [username]."),
                 }
